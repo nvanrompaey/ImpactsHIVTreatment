@@ -130,12 +130,49 @@ df220 = df220.join(df221,on=['country','date'])
 df33 = df3[df3['Year']==2013]
 #Moving on to data set 2, and making sure it shows only hospitals in a year.
 
+df33.set_index('Country',inplace=True)
+index331 = [(x,'2018') for x in df33.index]
+index331 = pd.MultiIndex.from_tuples(index331,names=['country','date'])
+df33.columns=['Year',
+              'Total Density/100k: Health Posts',
+              'Total Density/100k: Health Centers',
+              'Total Density/100k: Rural Hospitals',
+              'Total Density/100k: Provincial Hospitals',
+              'Total Density/100k: Specialized Hospitals',
+              'Total Density/100k: Total Hospitals']
+df331 = pd.DataFrame({'Total Density/100k: Health Posts 2013':df33['Total Density/100k: Health Posts'].to_list(),
+                      'Total Density/100k: Health Centers 2013':df33['Total Density/100k: Health Centers'].to_list(),
+                      'Total Density/100k: Rural Hospitals 2013':df33['Total Density/100k: Rural Hospitals'].to_list(),
+                      'Total Density/100k: Provincial Hospitals 2013':df33['Total Density/100k: Provincial Hospitals'].to_list(),
+                      'Total Density/100k: Specialized Hospitals 2013':df33['Total Density/100k: Specialized Hospitals'].to_list(),
+                      'Total Density/100k: Total Hospitals 2013':df33['Total Density/100k: Total Hospitals'].to_list()},index331)
+df331.index = [df331.index.get_level_values(0),df331.index.get_level_values(1).astype(str)]
+#Preparing this in the same way df220 and 221 were prepared
+
 df4.columns = ['Country','HIV (ARV) treatment 2014 in specialized facilities and services',
                'HEPATITIS treatment 2014 in specialized facilities and services',
                'HIV testing and councelling 2014 in specialized facilities and services',
                'Hepatitis testing and councelling 2014 in specialized facilities and services',
                'Hepatitis Vaccination 2014 in specialized facilities and services']
 df44 = df4.drop([0,1])
+
+df44.set_index('Country',inplace=True)
+index440 = [(x,'2018') for x in df44.index]
+index440 = pd.MultiIndex.from_tuples(index440,names=['country','date'])
+df44.columns=['ARVtreatment',
+              'HEPtreatment',
+              'HIVtest',
+              'HEPtest',
+              'HEPvaccine']
+df440 = pd.DataFrame({'HIV (ARV) treatment 2014 in specialized facilities and services':df44['ARVtreatment'].to_list(),
+                      'HEPATITIS treatment 2014 in specialized facilities and services':df44['HEPtreatment'].to_list(),
+                      'HIV testing and councelling 2014 in specialized facilities and services':df44['HIVtest'].to_list(),
+                      'Hepatitis testing and councelling 2014 in specialized facilities and services':df44['HEPtest'].to_list(),
+                      'Hepatitis Vaccination 2014 in specialized facilities and services':df44['HEPvaccine'].to_list()}
+                      ,index440)
+df440.index = [df440.index.get_level_values(0),df440.index.get_level_values(1).astype(str)]
+
+#Effectively equivalent of what was done with df33 above.
 
 #Further Data Cleaning, this time with the WorldBank data all in one
 dfcountrydata = df #to make sure I don't overwrite the dataframe
