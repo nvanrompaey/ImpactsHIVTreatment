@@ -3,6 +3,8 @@ import pandas as pd
 import wbdata
 #import plotly.graph_objects as go
 #The usual suspects
+#Note that wbdata requires 'pip install wbdata' before running. It's a separate plugin for WorldBank's data, which allows
+# a smooth pass from their servers into a Pandas dataframe
 
 indicators = {"NY.GDP.PCAP.CD":"Gross Domestic Product perCap",
               "NY.GDP.MKTP.CD":"Gross Domestic Product",
@@ -55,11 +57,13 @@ df1 = pd.read_csv("data/data.csv")
 df3 = pd.read_csv("data/data-2.csv")
 df4 = pd.read_csv("data/data-3.csv")
 # To be renamed appropriately later
+
 df1.info()
-df0 = df1
+df0 = df1 #Unnecessary and a bit un-clean, but to be feex'd later.
 df0.columns = ['Country','TherapyPercentage2018','TherapyNumber2018','HIV2018','HIV2010','HIV2005','HIV2000']
 df2 = df0.loc[(df0['TherapyPercentage2018']!='No data')| (df0['TherapyNumber2018']!='No data')]
-df2.drop(0,inplace=True)
+df2.drop(0,inplace=True) #Normally I'd reset the index here, 
+# but in this case, I'm going to be completely changing the structure later
 df2.replace('No data',np.nan,inplace=True)
 splitcol = df2.TherapyPercentage2018.str.split(' \[',expand=True)
 splitcol.columns=['TherapyPercentage2018avg','TherapyPercentageRange']
@@ -86,16 +90,52 @@ df2['HIV2000avg']=df2.HIV2000avg.str.replace(" ","")
 df2['HIV2000avg']=df2.HIV2000avg.str.replace("<","")
 df2['TherapyNumber2018']=df2.TherapyNumber2018.str.replace(" ","")
 
-df2.astype({'TherapyPercentage2018avg':float,'TherapyNumber2018':float,'HIV2018avg':float,'HIV2010avg':float,'HIV2005avg':float,'HIV2000avg':float})
+df2 = df2.astype({'TherapyPercentage2018avg':float,
+                  'TherapyNumber2018':float,
+                  'HIV2018avg':float,
+                  'HIV2010avg':float,
+                  'HIV2005avg':float,
+                  'HIV2000avg':float})
+df2.set_index('Country',inplace=True) #Because the countries are the index of the Worldbank dataframe
 
-#All Data Cleaning! Just making sure all of the columns are floats and have NaN instead of No Data and have no weird 
+#All Data Cleaning above! Just making sure all of the columns are floats and have NaN instead of No Data and have no weird 
 #symbols in there.
 
 df2.drop(['TherapyPercentage2018','HIV2018','HIV2010','HIV2005','HIV2000'],axis=1,inplace=True)
 df2.head() #Just to make sure it looks nice
 
+#Further cleaning, because I want all this to match the Worldbank data!
+df220 = df2[['HIV2018avg','HIV2010avg','HIV2005avg','HIV2000avg']] #This is breaking it up into two tables so one can be stacked.
+
+index221 = [(x,'2018') for x in df2.index]
+index221 = pd.MultiIndex.from_tuples(index221,names=['country','date'])
+df221 = pd.DataFrame({'TherapyNumber2018':df2['TherapyNumber2018'].to_list(),
+                      'TherapyPercentage2018avg':df2['TherapyPercentage2018avg'].to_list()},
+                     mulindex221) #Likewise, this dataframe was very particular about being reconstructed.
+
+df221.index = [df221.index.get_level_values(0),df221.index.get_level_values(1).astype(str)] 
+#The multiindices are very stubborn about being int instead of object. They have to be forcibly changed.
+df220.columns=['2018','2010','2005','2000']
+df220 = df220.stack().to_frame()
+df220.index = [df220.index.get_level_values(0).rename('country'),df220.index.get_level_values(1).rename('date')]
+#Likewise, they hate being renamed, except by force.
+df220.columns=['Average HIV patients'] #Two separate column settings are required just because we needed to rename earlier.
+
+
+df220 = df220.join(df221,on=['country','date'])
+#And then join them back together, with NaN values for all dates that aren't 2018.
+
+
+
 df33 = df3[df3['Year']==2013]
 #Moving on to data set 2, and making sure it shows only hospitals in a year.
+
+df4.columns = ['Country','HIV (ARV) treatment 2014 in specialized facilities and services',
+               'HEPATITIS treatment 2014 in specialized facilities and services',
+               'HIV testing and councelling 2014 in specialized facilities and services',
+               'Hepatitis testing and councelling 2014 in specialized facilities and services',
+               'Hepatitis Vaccination 2014 in specialized facilities and services']
+df44 = df4.drop([0,1])
 
 #Further Data Cleaning, this time with the WorldBank data all in one
 dfcountrydata = df #to make sure I don't overwrite the dataframe
