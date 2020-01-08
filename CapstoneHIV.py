@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 import wbdata
+import matplotlib.pyplot as plt
 #import plotly.graph_objects as go
 #The usual suspects
+
 #Note that wbdata requires 'pip install wbdata' before running. It's a separate plugin for WorldBank's data, which allows
 # a smooth pass from their servers into a Pandas dataframe
 
@@ -178,16 +180,55 @@ df440.index = [df440.index.get_level_values(0),df440.index.get_level_values(1).a
 dfcountrydata = df #to make sure I don't overwrite the dataframe
 dfcountrydata.update(df.groupby(level=0).bfill())
 '''
-This above one is particularly dangerous, but I decided I really had no choice. This short command updates all of our
-new dataframe's data using the previous data, grouped by the Country-level index.
-Ultimately, the data will all be effectively 3-dimensional. There's Country as one dimension, Year as another, and the
-column values as each 'third' dimension.
+        This above one is particularly dangerous, but I decided I really had no choice. This short command updates all of our
+        new dataframe's data using the previous data, grouped by the Country-level index.
+        Ultimately, the data will all be effectively 3-dimensional. There's Country as one dimension, Year as another, and the
+        column values as each 'third' dimension.
 
-The issue with the above command is that if we only have data for, say, 1993, and then 2015, then all of the data from 2000,
-2005, and 2010 will be the 1993 data. Likewise, if we have only 1960's data, then that data is assumed for all the data upwards.
-Some data is entirely missing before some date after 2000, so we have nonexistent datapoints there.
+        The issue with the above command is that if we only have data for, say, 1993, and then 2015, then all of the data from 2000,
+        2005, and 2010 will be the 1993 data. Likewise, if we have only 1960's data, then that data is assumed for all the data upwards.
+        Some data is entirely missing before some date after 2000, so we have nonexistent datapoints there.
 
-I anticipate that my data will just have to be inaccurate in the meantime. It will just have to be so.
+        I anticipate that my data will just have to be inaccurate in the meantime. It will just have to be so.
 '''
 dfcountrydata.loc(axis=0)[:,('2018','2010','2005','2000')].head(52)
 #This is just viewing the specific data here and there.
+
+df230 = df220.join(df331, on=['country','date'])
+df234 = df230.join(df440, on=['country','date'])
+dfHIVfull = dfcountrydata.loc(axis=0)[:,('2018','2010','2005','2000')].join(df234, on=['country','date'])
+#Combining all of the current data into one table. Note that I'm combining 2013 and 2014 data with 2018 data, but
+# I've chosen to treat those data as the most current.
+
+figs, axs = plt.subplots(2,8,figsize=(16,12))
+figs2, axs2 = plt.subplots(1,8,figsize=(16,8))
+figs3, axs3 = plt.subplots(4,8,figsize=(16,8))
+stat = dfHIVfull.loc(axis=0)[:,'2018']
+xlab = ['Literacy Rate','Gross Domestic Product perCap','Total Density/100k: Total Hospitals 2013',
+        'Urbanization', 'Urbanization', 'Hospital Beds','Secondary School Education']
+xstats = [stat.sort_values(xlab[0]),
+          stat.sort_values(xlab[1]),
+          stat[stat['Total Density/100k: Total Hospitals 2013']<50].sort_values(xlab[2]),
+          stat[stat['Total Density/100k: Total Hospitals 2013']<50].sort_values(xlab[3]),
+          stat.sort_values(xlab[4]),
+          stat.sort_values(xlab[5]),
+          stat.sort_values(xlab[6])]
+
+ystats = ['Average HIV patients', 'TherapyPercentage2018avg','TherapyNumber2018',
+          'HIV (ARV) treatment 2014 in specialized facilities and services',
+          'HEPATITIS treatment 2014 in specialized facilities and services',
+          'HIV testing and councelling 2014 in specialized facilities and services',
+          'Hepatitis testing and councelling 2014 in specialized facilities and services',
+          'Hepatitis Vaccination 2014 in specialized facilities and services']
+
+x = [xstats[a][xlab[a]] for a in range(7)]
+
+y = [[xstats[a][ystats[b]] for b in range(8)] for a in range(7)]
+for a in range(7):
+    for b in range(8):
+        if (b == 0) or (b == 2):
+            axs[a,b].scatter(x[a],y[a][b]/xstats[a]['Population'])
+        else:
+            axs[a,b].scatter(x[a],y[a][b])
+
+#With those, let's graph em! All of them. Every single possible combination within reason.
