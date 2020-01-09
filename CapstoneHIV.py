@@ -3,54 +3,24 @@ import pandas as pd
 import wbdata
 import matplotlib.pyplot as plt
 import HIVstats
-#import plotly.graph_objects as go
+import plotly.graph_objects as go
+import scipy.stats as stats
 #The usual suspects
+np.set_printoptions(suppress=True)
 
-# http://apps.who.int/gho/data/view.main.23300?lang=en - Data 1
-#  - Data 2
-# http://apps.who.int/gho/data/view.main.RSUD620v - Data 3
+
 
 #Note that wbdata requires 'pip install wbdata' before running. It's a separate plugin for WorldBank's data, which allows
-# a smooth pass from their servers into a Pandas dataframe
+# a smooth pass from their servers into a Pandas dataframe. Also installing plotly if it's not there.
 
-indicators = {"NY.GDP.PCAP.CD":"Gross Domestic Product perCap",
-              "NY.GDP.MKTP.CD":"Gross Domestic Product",
-              "SE.ADT.LITR.ZS":"Literacy Rate",
-              "SH.MED.BEDS.ZS":"Hospital Beds",
-              "SP.URB.TOTL.IN.ZS":"Urbanization",
-              "SE.SEC.ENRR":"Secondary School Education",
-             }
-countries = [i['id'] for i in wbdata.get_country(display=False)]
-df = wbdata.get_dataframe(indicators,country='all')
+
+countries = list(HIVstats.alpha3codedict.values())
+df = wbdata.get_dataframe(indicators,country=countries)
 #Wb data lets me get pandas dataframes directly from a source. Hopefully I'll be able to front-end the country tags.
 
 #Unfortunately, there was no clear dictionary with these values. I've decided to create them manually for only the countries that
 # don't have No Data values in both my dependent variables, TherapyPercentage2018 and TherapyNumber2018
-alpha3codedict = {'Afghanistan':'AFG', 'Albania':'ALB', 'Algeria':'DZA', 'Angola':'AGO', 'Argentina':'ARG', 'Armenia':'ARM', 
-                  'Australia':'AUS', 'Azerbaijan':'AZE', 'Bahamas':'BHS', 'Bangladesh':'BGD', 'Barbados':'BRB', 'Belarus':'BLR',
-                  'Belize':'BLZ', 'Benin':'BEN', 'Bhutan':'BTN', 'Bolivia (Plurinational State of)':'BOL', 
-                  'Bosnia and Herzegovina':'BIH', 'Botswana':'BWA', 'Brazil':'BRA', 'Brunei Darussalam':'BRN', 
-                  'Bulgaria':'BGR', 'Burkina Faso':'BFA', 'Burundi':'BDI', 'Cabo Verde':'CPV', 'Cambodia':'KHM', 
-                  'Cameroon':'CMR', 'Central African Republic':'CAF', 'Chad':'TCD', 'Chile':'CHL', 'China':'CHN', 
-                  'Colombia':'COL', 'Comoros':'COM', 'Congo':'COG', 'Costa Rica':'CRI', "Côte d'Ivoire":'CIV', 'Croatia':'HRV', 
-                  'Cuba':'CUB', 'Czechia':'CZE', 'Democratic Republic of the Congo':'COD', 'Denmark':'DNK', 'Djibouti':'DJI', 
-                  'Dominican Republic':'DOM', 'Ecuador':'ECU', 'Egypt':'EGY', 'El Salvador':'SLV', 'Equatorial Guinea':'GNQ', 
-                  'Eritrea':'ERI', 'Estonia':'EST', 'Eswatini':'SWZ', 'Ethiopia':'ETH', 'Finland':'FIN', 'France':'FRA',                             'Gabon':'GAB', 
-                  'Gambia':'GMB', 'Georgia':'GEO', 'Germany':'DEU', 'Ghana':'GHA', 'Guatemala':'GTM', 'Guinea':'GIN',                                 'Guinea-Bissau':'GNB', 
-                  'Guyana':'GUY', 'Haiti':'HTI', 'Honduras':'HND', 'Hungary':'HUN', 'Iceland':'ISL', 'Indonesia':'IDN', 
-                  'Iran (Islamic Republic of)':'IRN', 'Ireland':'IRL', 'Italy':'ITA', 'Jamaica':'JAM', 'Japan':'JPN',                                 'Jordan':'JOR',
-                  'Kazakhstan':'KAZ', 'Kenya':'KEN', 'Kuwait':'KWT', 'Kyrgyzstan':'KGZ', "Lao People's Democratic Republic":'LAO', 
-                  'Latvia':'LVA', 'Lebanon':'LBN', 'Lesotho':'LSO', 'Liberia':'LBR', 'Libya':'LBY', 'Luxembourg':'LUX',                               'Madagascar':'MDG', 
-                  'Malawi':'MWI', 'Malaysia':'MYS', 'Mali':'MLI', 'Mauritania':'MRT', 'Mauritius':'MUS', 'Mexico':'MEX',                             'Mongolia':'MNG', 
-                  'Montenegro':'MNE', 'Morocco':'MAR', 'Mozambique':'MOZ', 'Myanmar':'MMR', 'Namibia':'NAM', 'Nepal':'NPL',                           'New Zealand':'NZL',
-                  'Nicaragua':'NIC', 'Niger':'NER', 'Nigeria':'NGA', 'Norway':'NOR', 'Oman':'OMN', 'Pakistan':'PAK',                                 'Panama':'PAN', 
-                  'Papua New Guinea':'PNG', 'Paraguay':'PRY', 'Peru':'PER', 'Philippines':'PHL', 'Portugal':'PRT', 'Qatar':'QAT', 
-                  'Republic of Moldova':'MDA', 'Romania':'ROU', 'Rwanda':'RWA', 'Saudi Arabia':'SAU', 'Senegal':'SEN',                               'Serbia':'SRB', 
-                  'Sierra Leone':'SLE', 'Singapore':'SGP', 'Slovakia':'SVK', 'Somalia':'SOM', 'South Africa':'ZAF',                                   'South Sudan':'SSD', 
-                  'Spain':'ESP', 'Sri Lanka':'LKA', 'Sudan':'SDN', 'Suriname':'SUR', 'Switzerland':'CHE',                                             'Syrian Arab Republic':'SYR', 
-                  'Tajikistan':'TJK', 'Thailand':'THA', 'Republic of North Macedonia':'MKD', 'Togo':'TGO', 'Tunisia':'TUN', 
-                  'Uganda':'UGA', 'Ukraine':'UKR', 'United Republic of Tanzania':'TZA', 'Uruguay':'URY', 'Uzbekistan':'UZB', 
-                  'Viet Nam':'VNM', 'Yemen':'YEM', 'Zambia':'ZMB', 'Zimbabwe':'ZWE'}
+
 
 
 df.info()
@@ -60,16 +30,15 @@ df.describe()
 df.loc(axis=0)[:,'2018'].loc(axis=1)['Literacy Rate']
 #Testing whether or not I can locate data by both multi-index and column. Definitely can.
 
-df1 = pd.read_csv("data/data.csv")
+df1 = pd.read_csv("data/data.csv") # http://apps.who.int/gho/data/view.main.23300?lang=en
 df3 = pd.read_csv("data/data-2.csv")
-df4 = pd.read_csv("data/data-3.csv")
+df4 = pd.read_csv("data/data-3.csv") # http://apps.who.int/gho/data/view.main.RSUD620v
 df5 = pd.DataFrame(list(HIVstats.PepfarOps.items()))
 # To be renamed appropriately later
 
 df1.info()
-df0 = df1 #Unnecessary and a bit un-clean, but to be feex'd later.
-df0.columns = ['Country','TherapyPercentage2018','TherapyNumber2018','HIV2018','HIV2010','HIV2005','HIV2000']
-df2 = df0.loc[(df0['TherapyPercentage2018']!='No data')| (df0['TherapyNumber2018']!='No data')]
+df1.columns = ['Country','TherapyPercentage2018','TherapyNumber2018','HIV2018','HIV2010','HIV2005','HIV2000']
+df2 = df1.loc[(df1['TherapyPercentage2018']!='No data')| (df1['TherapyNumber2018']!='No data')]
 df2.drop(0,inplace=True) #Normally I'd reset the index here, 
 # but in this case, I'm going to be completely changing the structure later
 df2.replace('No data',np.nan,inplace=True)
@@ -97,6 +66,7 @@ df2['HIV2005avg']=df2.HIV2005avg.str.replace("<","")
 df2['HIV2000avg']=df2.HIV2000avg.str.replace(" ","")
 df2['HIV2000avg']=df2.HIV2000avg.str.replace("<","")
 df2['TherapyNumber2018']=df2.TherapyNumber2018.str.replace(" ","")
+#This is all just splitting columns, replacing non-number symbols, and renaming columns.
 
 df2 = df2.astype({'TherapyPercentage2018avg':float,
                   'TherapyNumber2018':float,
@@ -119,7 +89,7 @@ index221 = [(x,'2018') for x in df2.index]
 index221 = pd.MultiIndex.from_tuples(index221,names=['country','date'])
 df221 = pd.DataFrame({'TherapyNumber2018':df2['TherapyNumber2018'].to_list(),
                       'TherapyPercentage2018avg':df2['TherapyPercentage2018avg'].to_list()},
-                     mulindex221) #Likewise, this dataframe was very particular about being reconstructed.
+                     mulindex221) #This dataframe was very particular about being reconstructed.
 
 df221.index = [df221.index.get_level_values(0),df221.index.get_level_values(1).astype(str)] 
 #The multiindices are very stubborn about being int instead of object. They have to be forcibly changed.
@@ -205,8 +175,8 @@ dfcountrydata.loc(axis=0)[:,('2018','2010','2005','2000')].head(52)
 #This is just viewing the specific data here and there.
 
 df230 = df220.join(df331, on=['country','date'])
-df234 = df230.join(df440, on=['country','date'])
-dfHIVfull = dfcountrydata.loc(axis=0)[:,('2018','2010','2005','2000')].join(df234, on=['country','date'])
+#df234 = df230.join(df440, on=['country','date'])
+dfHIVfull = dfcountrydata.loc(axis=0)[:,('2018','2010','2005','2000')].join(df230, on=['country','date'])
 #Combining all of the current data into one table. Note that I'm combining 2013 and 2014 data with 2018 data, but
 # I've chosen to treat those data as the most current.
 
