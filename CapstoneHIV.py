@@ -2,8 +2,13 @@ import numpy as np
 import pandas as pd
 import wbdata
 import matplotlib.pyplot as plt
+import HIVstats
 #import plotly.graph_objects as go
 #The usual suspects
+
+# http://apps.who.int/gho/data/view.main.23300?lang=en - Data 1
+#  - Data 2
+# http://apps.who.int/gho/data/view.main.RSUD620v - Data 3
 
 #Note that wbdata requires 'pip install wbdata' before running. It's a separate plugin for WorldBank's data, which allows
 # a smooth pass from their servers into a Pandas dataframe
@@ -58,6 +63,7 @@ df.loc(axis=0)[:,'2018'].loc(axis=1)['Literacy Rate']
 df1 = pd.read_csv("data/data.csv")
 df3 = pd.read_csv("data/data-2.csv")
 df4 = pd.read_csv("data/data-3.csv")
+df5 = pd.DataFrame(list(HIVstats.PepfarOps.items()))
 # To be renamed appropriately later
 
 df1.info()
@@ -176,6 +182,10 @@ df440.index = [df440.index.get_level_values(0),df440.index.get_level_values(1).a
 
 #Effectively equivalent of what was done with df33 above.
 
+df5.set_index(0,inplace=True)
+index550 = [(x,'2018') for x in df5.index]
+index550 = pd.MultiIndex.from_tuples(index550,names=['country','date'])
+
 #Further Data Cleaning, this time with the WorldBank data all in one
 dfcountrydata = df #to make sure I don't overwrite the dataframe
 dfcountrydata.update(df.groupby(level=0).bfill())
@@ -200,35 +210,52 @@ dfHIVfull = dfcountrydata.loc(axis=0)[:,('2018','2010','2005','2000')].join(df23
 #Combining all of the current data into one table. Note that I'm combining 2013 and 2014 data with 2018 data, but
 # I've chosen to treat those data as the most current.
 
-figs, axs = plt.subplots(2,8,figsize=(16,12))
-figs2, axs2 = plt.subplots(1,8,figsize=(16,8))
-figs3, axs3 = plt.subplots(4,8,figsize=(16,8))
+
+dfHIVfull.loc(axis=0)[:,'2018']=dfHIVfull.loc(axis=0)[:,'2018'].fillna({'HIV (ARV) treatment 2014 in specialized facilities and services':'No Data',
+                                        'HEPATITIS treatment 2014 in specialized facilities and services':'No Data',
+                                        'HIV testing and councelling 2014 in specialized facilities and services':'No Data',
+                                        'Hepatitis testing and councelling 2014 in specialized facilities and services':'No Data',
+                                        'Hepatitis Vaccination 2014 in specialized facilities and services':'No Data'})
+#This is all to fix the NaN values so they can all be strings for plotting.
+
+
+figs, axs = plt.subplots(8,3,figsize=(16,20))
 stat = dfHIVfull.loc(axis=0)[:,'2018']
-xlab = ['Literacy Rate','Gross Domestic Product perCap','Total Density/100k: Total Hospitals 2013',
-        'Urbanization', 'Urbanization', 'Hospital Beds','Secondary School Education']
+xlab = ['Literacy Rate','Gross Domestic Product perCap','Total Density/100k: Specialized Hospitals 2013',
+        'Urbanization', 'Urbanization', 'Hospital Beds','Secondary School Education','PEPFar Aid']
 xstats = [stat.sort_values(xlab[0]),
           stat.sort_values(xlab[1]),
-          stat[stat['Total Density/100k: Total Hospitals 2013']<50].sort_values(xlab[2]),
-          stat[stat['Total Density/100k: Total Hospitals 2013']<50].sort_values(xlab[3]),
+          stat[stat['Total Density/100k: Specialized Hospitals 2013']<2].sort_values(xlab[2]),
+          stat[stat['Total Density/100k: Specialized Hospitals 2013']<2].sort_values(xlab[3]),
           stat.sort_values(xlab[4]),
           stat.sort_values(xlab[5]),
-          stat.sort_values(xlab[6])]
+          stat.sort_values(xlab[6]),
+          stat.sort_values(xlab[7])]
 
-ystats = ['Average HIV patients', 'TherapyPercentage2018avg','TherapyNumber2018',
-          'HIV (ARV) treatment 2014 in specialized facilities and services',
-          'HEPATITIS treatment 2014 in specialized facilities and services',
-          'HIV testing and councelling 2014 in specialized facilities and services',
-          'Hepatitis testing and councelling 2014 in specialized facilities and services',
-          'Hepatitis Vaccination 2014 in specialized facilities and services']
+ystats = ['Average HIV patients', 'TherapyPercentage2018avg','TherapyNumber2018']
 
-x = [xstats[a][xlab[a]] for a in range(7)]
+x = [xstats[a][xlab[a]] for a in range(8)]
 
-y = [[xstats[a][ystats[b]] for b in range(8)] for a in range(7)]
-for a in range(7):
-    for b in range(8):
+y = [[xstats[a][ystats[b]] for b in range(3)] for a in range(8)]
+for a in range(8):
+    for b in range(3):
         if (b == 0) or (b == 2):
-            axs[a,b].scatter(x[a],y[a][b]/xstats[a]['Population'])
+            axs[a,b].scatter(x[a],(y[a][b])/xstats[a]['Population'])
         else:
             axs[a,b].scatter(x[a],y[a][b])
+        axs[a,b].set(xlabel=xlab[a],ylabel=ystats[b])
 
-#With those, let's graph em! All of them. Every single possible combination within reason.
+figs.tight_layout()
+
+#With those, let's graph em! All of them. Every single possible combination within reason. Excepting the really sorta' dirty Data 3 collection. It's really not worth it.
+
+stat.loc(axis=1)['Literacy Rate','Gross Domestic Product perCap','Total Density/100k: Specialized Hospitals 2013',
+        'Urbanization', 'Hospital Beds','Secondary School Education','PEPFar Aid'].cov()
+
+#Take the covariance for a covariance table
+
+totlab = ['Literacy Rate','Gross Domestic Product perCap','Total Density/100k: Specialized Hospitals 2013',
+        'Urbanization', 'Hospital Beds','Secondary School Education','PEPFar Aid','Average HIV patients', 'TherapyPercentage2018avg','TherapyNumber2018']
+HIVstats.masscorrelation(stat,totlab,xlab)
+
+#And create a nice correlation table
