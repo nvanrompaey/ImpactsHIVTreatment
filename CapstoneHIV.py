@@ -255,7 +255,11 @@ stat.loc(axis=1)['Literacy Rate','Gross Domestic Product perCap','Total Density/
 #Take the covariance for a covariance table
 
 totlab = ['Literacy Rate','Gross Domestic Product perCap','Total Density/100k: Specialized Hospitals 2013',
-        'Urbanization', 'Hospital Beds','Secondary School Education','PEPFar Aid','Average HIV patients', 'TherapyPercentage2018avg','TherapyNumber2018']
-HIVstats.masscorrelation(stat,totlab,xlab)
+        'Urbanization', 'Hospital Beds','Secondary School Education','PEPFar Aid','Average HIV patients', 
+          'TherapyPercentage2018avg','TherapyNumber2018', 'Average HIV Patients div Pop','TherapyNumber2018 div Pop']
+stat2 = stat
+stat2['Average HIV Patients div Pop'] = stat2['Average HIV patients']/stat2['Population']
+stat2['TherapyNumber2018 div Pop'] = stat2['TherapyNumber2018']/stat2['Population']
+HIVstats.masscorrelation(stat2,totlab,xlab)
 
 #And create a nice correlation table
