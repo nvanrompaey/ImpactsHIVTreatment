@@ -63,14 +63,14 @@ alpha3codedict = {'Afghanistan':'AFG', 'Albania':'ALB', 'Algeria':'DZA', 'Angola
                   'Nicaragua':'NIC', 'Niger':'NER', 'Nigeria':'NGA', 'Norway':'NOR', 'Oman':'OMN', 'Pakistan':'PAK', 'Panama':'PAN', 
                   'Papua New Guinea':'PNG', 'Paraguay':'PRY', 'Peru':'PER', 'Philippines':'PHL', 'Portugal':'PRT', 'Qatar':'QAT', 
                   'Republic of Moldova':'MDA', 'Romania':'ROU', 'Rwanda':'RWA', 'Saudi Arabia':'SAU', 'Senegal':'SEN', 'Serbia':'SRB', 
-                  'Sierra Leone':'SLE', 'Singapore':'SGP', 'Slovakia':'SVK', 'Somalia':'SOM', 'South Africa':'ZAF', 'South Sudan':'SSD', 
+                  'Sierra Leone':'SLE', 'Singapore':'SGP', 'Slovakia':'SVK', 'Somalia':'SOM', 'South Sudan':'SSD', 
                   'Spain':'ESP', 'Sri Lanka':'LKA', 'Sudan':'SDN', 'Suriname':'SUR', 'Switzerland':'CHE', 'Syrian Arab Republic':'SYR', 
                   'Tajikistan':'TJK', 'Thailand':'THA', 'Republic of North Macedonia':'MKD', 'Togo':'TGO', 'Tunisia':'TUN', 
-                  'Uganda':'UGA', 'Ukraine':'UKR', 'United Republic of Tanzania':'TZA', 'Uruguay':'URY', 'Uzbekistan':'UZB', 
-                  'Viet Nam':'VNM', 'Yemen':'YEM', 'Zambia':'ZMB', 'Zimbabwe':'ZWE'}
+                  'United Republic of Tanzania':'TZA','Uganda':'UGA', 'Ukraine':'UKR','Uruguay':'URY', 'Uzbekistan':'UZB', 
+                  'Viet Nam':'VNM', 'Yemen':'YEM', 'South Africa':'ZAF', 'Zambia':'ZMB', 'Zimbabwe':'ZWE'}
 
 def masscorrelation(df,x,ind):
-    #This function takes a dataframe, a list of total labels, and a list of independent variables.
+    #This function takes a dataframe, a list of total columns (x), and a list of independent variables (ind).
     #It then spits out a correlation table where the independent variables are compared against the dependent variables.
     x1 = list(set(x.copy()))
     ind1 = list(set(ind.copy()))
@@ -80,13 +80,19 @@ def masscorrelation(df,x,ind):
     return corrtable.loc(axis=0)[x1].loc(axis=1)[ind1]
 
 def forcemulindex(df,date,columns,y):
-    #Takes a dataframe, a single date string, a list of strings, and a lists of two column names to be used.
-    # Spits out a new table with a multiindex.
+    # Takes a dataframe, a single date string, a list of strings, and a lists of two column names to be used.
+    # Spits out a new table with a multiindex where date is the second index across the board.
+    #The point of this function, since it's not clear, is to make it so my other datasets fit a specific scheme
+    # Since I used this four different times, I figured I needed it as a separate easily-callable function. 
     index000 = [(x,date) for x in df.index]
     index000 = pd.MultiIndex.from_tuples(index000,names=y)
     return pd.DataFrame({columns[a]:df[columns[a]].to_list() for a in range(len(columns))},index000)
 
 def easycouple(dep,indep):
+    # Takes two lists of strings dep and indep.
+    # Returns a list of lists of string pairs where each dep is matched to every indep.
+    # e.g. given [d1,d2],[ind1,ind2,ind3], 
+    # returns [[d1,ind1],[d1,ind2],[d1,ind3],[d2,ind1],[d2,ind2],[d2,ind3]]
     couple = []
     for a in indep:
         for b in dep:
@@ -94,17 +100,23 @@ def easycouple(dep,indep):
     return couple
 
 def linregtograph(df,columns,ax):
-    # Takes a dataframe, desired columns, and axes, returns None with a linear regression graph.
+    # Takes a dataframe, desired columns, and axes, 
+    # Returns None with a linear regression graph.
+    # Relies on scipy.stats.linregress()
     statty = df.dropna(subset=columns)
     x = statty.loc(axis=1)[columns[0]]
     m,b,r,p,ste = stats.linregress(statty.loc(axis=1)[columns])
     ax.scatter(x,statty.loc(axis=1)[columns[1]])
     ax.plot(x,m*x+b,color=(0.5,0,0.8))
     ax.set(xlabel=columns[0],ylabel=columns[1])
+    print(columns,"P Value: %s" %p)
     return None
 
 
 def multilinreggraph(df,mulcol):
+    #Takes a dataframe and a list of lists of pairs of strings (can be made through Easycouple)
+    # Returns None while printing a number of subplots equal to the number of string pairs
+    #Relies on linregtograph, above
     figs, axs = plt.subplots(len(mulcol),figsize=(16,140))
     if len(mulcol)==1:
         linregtograph(df,mulcol[0],axs)
