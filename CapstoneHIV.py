@@ -32,8 +32,9 @@ df.loc(axis=0)[:,'2018'].loc(axis=1)['Literacy Rate']
 
 df1 = pd.read_csv("data/data.csv") # http://apps.who.int/gho/data/view.main.23300?lang=en
 df3 = pd.read_csv("data/data-2.csv") # http://apps.who.int/gho/data/view.main.30000
-df4 = pd.read_csv("data/data-3.csv") # http://apps.who.int/gho/data/view.main.RSUD620v
+df4 = pd.read_csv("data/data-3.csv") # http://apps.who.int/gho/data/view.main.RSUD620v (Dropped)
 df5 = pd.DataFrame(list(HIVstats.PepfarOps.items())) # https://copsdata.amfar.org/
+#Also used: Country codes, from https://www.cia.gov/library/publications/the-world-factbook/appendix/appendix-d.html
 # To be renamed appropriately later
 
 df1.info()
