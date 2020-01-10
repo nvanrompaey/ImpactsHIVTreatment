@@ -105,7 +105,7 @@ def linregtograph(df,columns,ax):
 
 
 def multilinreggraph(df,mulcol):
-    figs, axs = plt.subplots(len(mulcol),figsize=(16,50))
+    figs, axs = plt.subplots(len(mulcol),figsize=(16,140))
     if len(mulcol)==1:
         linregtograph(df,mulcol[0],axs)
     else:
